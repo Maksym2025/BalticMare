@@ -1,0 +1,20 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Supabase
+        run: |
+          set -euo pipefail
+          URL="https://tleyztmdszcypateivpz.supabase.co/auth/v1/health"
+          echo "Pinging Supabase: $URL"
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 --max-time 30 "$URL"
+          echo
+          echo "Supabase heartbeat OK: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
