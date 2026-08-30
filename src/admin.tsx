@@ -1,114 +1,31 @@
 import React, { useMemo, useState } from 'react'
 import * as XLSX from 'xlsx'
 import './styles.css'
+import './admin.css'
 
 type Row = Record<string, unknown>
 type Preview = { products: number; variants: number; packagings: number; segments: number; priceLists: number; prices: number; moq: number }
-
 const SEGMENTS = ['HoReCa', 'Distributor', 'Wholesale']
 const aliases: Record<string, string[]> = {
-  sku: ['sku', 'article', 'артикул', 'код'],
-  name: ['name', 'product', 'product name', 'товар', 'наименование'],
-  category: ['category', 'категория', 'product category'],
-  packaging: ['packaging', 'package', 'упаковка', 'pack'],
-  net_weight_kg: ['net weight kg', 'net weight', 'weight kg', 'вес кг', 'net_weight_kg'],
-  moq: ['moq', 'min order qty', 'minimum order', 'мин заказ', 'минимальный заказ'],
-  step: ['step', 'qty step', 'order qty step', 'шаг', 'кратность'],
+  sku: ['sku', 'article', 'артикул', 'код'], name: ['name', 'product', 'product name', 'товар', 'наименование'], category: ['category', 'категория', 'product category'], packaging: ['packaging', 'package', 'упаковка', 'pack'], net_weight_kg: ['net weight kg', 'net weight', 'weight kg', 'вес кг', 'net_weight_kg'], moq: ['moq', 'min order qty', 'minimum order', 'мин заказ', 'минимальный заказ'], step: ['step', 'qty step', 'order qty step', 'шаг', 'кратность'],
 }
-
 function keyOf(v: unknown) { return String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ') }
 function findCol(headers: string[], names: string[]) { return headers.find(h => names.includes(keyOf(h))) }
 function number(v: unknown) { const n = Number(String(v ?? '').replace(',', '.').replace(/[^0-9.-]/g, '')); return Number.isFinite(n) ? n : null }
-
-function parseRows(buffer: ArrayBuffer) {
-  const wb = XLSX.read(buffer, { type: 'array' })
-  const sheet = wb.Sheets[wb.SheetNames[0]]
-  return XLSX.utils.sheet_to_json<Row>(sheet, { defval: '' })
-}
-
+function parseRows(buffer: ArrayBuffer) { const wb = XLSX.read(buffer, { type: 'array' }); const sheet = wb.Sheets[wb.SheetNames[0]]; return XLSX.utils.sheet_to_json<Row>(sheet, { defval: '' }) }
 function mapRows(rows: Row[]) {
   if (!rows.length) throw new Error('Файл пустой')
-  const headers = Object.keys(rows[0])
-  const cols: Record<string, string | undefined> = {}
+  const headers = Object.keys(rows[0]); const cols: Record<string, string | undefined> = {}
   for (const [field, list] of Object.entries(aliases)) cols[field] = findCol(headers, list)
   if (!cols.sku || !cols.name) throw new Error('Не нашёл обязательные колонки SKU и Name/Наименование')
-
-  const priceCols = SEGMENTS.map(segment => ({
-    segment,
-    column: findCol(headers, [segment, `${segment} price`, `${segment} цена`, `${segment} €/kg`, `${segment} eur/kg`])
-  }))
-
-  return rows.map((r, i) => ({
-    row: i + 2,
-    sku: String(r[cols.sku!] ?? '').trim(),
-    name: String(r[cols.name!] ?? '').trim(),
-    category: String((cols.category && r[cols.category]) ?? '').trim(),
-    packaging: String((cols.packaging && r[cols.packaging]) ?? '').trim(),
-    net_weight_kg: number(cols.net_weight_kg && r[cols.net_weight_kg]),
-    moq: number(cols.moq && r[cols.moq]) ?? 1,
-    step: number(cols.step && r[cols.step]) ?? 1,
-    prices: priceCols.map(p => ({ segment: p.segment, price: p.column ? number(r[p.column]) : null })).filter(p => p.price !== null)
-  })).filter(r => r.sku && r.name)
+  const priceCols = SEGMENTS.map(segment => ({ segment, column: findCol(headers, [segment, `${segment} price`, `${segment} цена`, `${segment} €/kg`, `${segment} eur/kg`]) }))
+  return rows.map((r, i) => ({ row: i + 2, sku: String(r[cols.sku!] ?? '').trim(), name: String(r[cols.name!] ?? '').trim(), category: String((cols.category && r[cols.category]) ?? '').trim(), packaging: String((cols.packaging && r[cols.packaging]) ?? '').trim(), net_weight_kg: number(cols.net_weight_kg && r[cols.net_weight_kg]), moq: number(cols.moq && r[cols.moq]) ?? 1, step: number(cols.step && r[cols.step]) ?? 1, prices: priceCols.map(p => ({ segment: p.segment, price: p.column ? number(r[p.column]) : null })).filter(p => p.price !== null) })).filter(r => r.sku && r.name)
 }
-
 function App() {
-  const [rows, setRows] = useState<ReturnType<typeof mapRows>>([])
-  const [fileName, setFileName] = useState('')
-  const [secret, setSecret] = useState('')
-  const [mode, setMode] = useState<'preview' | 'apply'>('preview')
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState('')
-
-  const preview: Preview = useMemo(() => ({
-    products: rows.length,
-    variants: rows.length,
-    packagings: new Set(rows.map(r => r.packaging).filter(Boolean)).size,
-    segments: new Set(rows.flatMap(r => r.prices.map(p => p.segment))).size,
-    priceLists: new Set(rows.flatMap(r => r.prices.map(p => p.segment))).size,
-    prices: rows.reduce((n, r) => n + r.prices.length, 0),
-    moq: rows.length,
-  }), [rows])
-
-  async function loadFile(file: File) {
-    setMessage('')
-    try { setRows(mapRows(parseRows(await file.arrayBuffer()))); setFileName(file.name) }
-    catch (e) { setRows([]); setMessage(e instanceof Error ? e.message : 'Не удалось прочитать файл') }
-  }
-
-  async function apply() {
-    if (!rows.length) return setMessage('Сначала загрузите Excel/CSV')
-    if (!secret.trim()) return setMessage('Нужен Import Secret. Он не сохраняется в браузере.')
-    setBusy(true); setMessage('Загружаю в Supabase…')
-    try {
-      const res = await fetch('/api/catalog-import', { method: 'POST', headers: { 'content-type': 'application/json', 'x-import-secret': secret }, body: JSON.stringify({ rows }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
-      setMessage(`Готово: ${data.products} товаров, ${data.prices} цен, ${data.moq} MOQ. Режим upsert — повторный импорт не создаёт дубликаты.`)
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Ошибка импорта') }
-    finally { setBusy(false) }
-  }
-
-  return <div className="admin-shell">
-    <header className="admin-top"><div className="brand">ROYAL <span>BALTIC</span><small>SEAFOOD</small></div><div><span className="admin-badge">CATALOG ADMIN</span><a href="/">← Storefront</a></div></header>
-    <main className="admin-main">
-      <div className="admin-title"><div><p className="eyebrow">BACK OFFICE</p><h1>Catalog & Pricing</h1><p>Постоянный импорт ассортимента, цен, упаковок и MOQ.</p></div><span className="status-dot">● Import Layer ready</span></div>
-      <section className="admin-card">
-        <h2>1. Загрузить файл</h2>
-        <label className="dropzone"><input type="file" accept=".xlsx,.xls,.csv" onChange={e => e.target.files?.[0] && loadFile(e.target.files[0])}/><strong>{fileName || 'Выберите .xlsx / .xls / .csv'}</strong><span>Первый лист читается автоматически</span></label>
-        <div className="admin-help">Обязательные поля: <b>SKU</b>, <b>Name / Наименование</b>. Цены распознаются по колонкам <b>HoReCa</b>, <b>Distributor</b>, <b>Wholesale</b>.</div>
-      </section>
-      {rows.length > 0 && <>
-        <section className="metric-grid">{[['Products', preview.products],['Variants',preview.variants],['Packaging',preview.packagings],['Segments',preview.segments],['Prices',preview.prices],['MOQ',preview.moq]].map(([a,b])=><div className="metric" key={String(a)}><span>{a}</span><strong>{b}</strong></div>)}</section>
-        <section className="admin-card">
-          <div className="card-head"><div><h2>2. Preview changes</h2><p>Ничего не записывается до Apply.</p></div><button className="secondary" onClick={()=>setMode(mode==='preview'?'apply':'preview')}>{mode==='preview'?'Show import controls':'Back to preview'}</button></div>
-          <div className="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Packaging</th><th>HoReCa</th><th>Distributor</th><th>Wholesale</th><th>MOQ</th></tr></thead><tbody>{rows.slice(0,20).map(r=><tr key={r.sku}><td><b>{r.sku}</b></td><td>{r.name}</td><td>{r.category || '—'}</td><td>{r.packaging || '—'}</td>{SEGMENTS.map(s=><td key={s}>{r.prices.find(p=>p.segment===s)?.price ?? '—'}</td>)}<td>{r.moq}</td></tr>)}</tbody></table></div>
-          {rows.length > 20 && <p className="admin-help">Показаны первые 20 строк из {rows.length}. Все строки уйдут в Apply.</p>}
-        </section>
-        {mode === 'apply' && <section className="admin-card apply-card"><h2>3. Apply to Supabase</h2><p>Import Secret используется только для этого запроса и не хранится в коде.</p><input className="secret-input" type="password" placeholder="Import Secret" value={secret} onChange={e=>setSecret(e.target.value)}/><button className="primary" disabled={busy} onClick={apply}>{busy ? 'Importing…' : 'Apply catalog update'}</button></section>}
-      </>}
-      {message && <div className="admin-message">{message}</div>}
-    </main>
-  </div>
+  const [rows, setRows] = useState<ReturnType<typeof mapRows>>([]); const [fileName, setFileName] = useState(''); const [secret, setSecret] = useState(''); const [mode, setMode] = useState<'preview'|'apply'>('preview'); const [busy, setBusy] = useState(false); const [message, setMessage] = useState('')
+  const preview: Preview = useMemo(() => ({ products: rows.length, variants: rows.length, packagings: new Set(rows.map(r=>r.packaging).filter(Boolean)).size, segments: new Set(rows.flatMap(r=>r.prices.map(p=>p.segment))).size, priceLists: new Set(rows.flatMap(r=>r.prices.map(p=>p.segment))).size, prices: rows.reduce((n,r)=>n+r.prices.length,0), moq: rows.length }), [rows])
+  async function loadFile(file: File) { setMessage(''); try { setRows(mapRows(parseRows(await file.arrayBuffer()))); setFileName(file.name) } catch(e) { setRows([]); setMessage(e instanceof Error ? e.message : 'Не удалось прочитать файл') } }
+  async function apply() { if(!rows.length)return setMessage('Сначала загрузите Excel/CSV'); if(!secret.trim())return setMessage('Нужен Import Secret. Он не сохраняется в браузере.'); setBusy(true);setMessage('Загружаю в Supabase…'); try { const res=await fetch('/api/catalog-import',{method:'POST',headers:{'content-type':'application/json','x-import-secret':secret},body:JSON.stringify({rows})}); const data=await res.json(); if(!res.ok)throw new Error(data.error||`HTTP ${res.status}`); setMessage(`Готово: ${data.products} товаров, ${data.prices} цен, ${data.moq} MOQ. Повторный импорт работает как upsert.`) } catch(e){setMessage(e instanceof Error?e.message:'Ошибка импорта')} finally{setBusy(false)} }
+  return <div className="admin-shell"><header className="admin-top"><div className="brand">ROYAL <span>BALTIC</span><small>SEAFOOD</small></div><div><span className="admin-badge">CATALOG ADMIN</span><a href="/">← Storefront</a></div></header><main className="admin-main"><div className="admin-title"><div><p className="eyebrow">BACK OFFICE</p><h1>Catalog & Pricing</h1><p>Постоянный импорт ассортимента, цен, упаковок и MOQ.</p></div><span className="status-dot">● Import Layer ready</span></div><section className="admin-card"><h2>1. Загрузить файл</h2><label className="dropzone"><input type="file" accept=".xlsx,.xls,.csv" onChange={e=>e.target.files?.[0]&&loadFile(e.target.files[0])}/><strong>{fileName||'Выберите .xlsx / .xls / .csv'}</strong><span>Первый лист читается автоматически</span></label><div className="admin-help">Обязательные поля: <b>SKU</b>, <b>Name / Наименование</b>. Цены распознаются по колонкам <b>HoReCa</b>, <b>Distributor</b>, <b>Wholesale</b>.</div></section>{rows.length>0&&<><section className="metric-grid">{[['Products',preview.products],['Variants',preview.variants],['Packaging',preview.packagings],['Segments',preview.segments],['Prices',preview.prices],['MOQ',preview.moq]].map(([a,b])=><div className="metric" key={String(a)}><span>{a}</span><strong>{b}</strong></div>)}</section><section className="admin-card"><div className="card-head"><div><h2>2. Preview changes</h2><p>Ничего не записывается до Apply.</p></div><button className="secondary" onClick={()=>setMode(mode==='preview'?'apply':'preview')}>{mode==='preview'?'Show import controls':'Back to preview'}</button></div><div className="table-wrap"><table><thead><tr><th>SKU</th><th>Product</th><th>Category</th><th>Packaging</th><th>HoReCa</th><th>Distributor</th><th>Wholesale</th><th>MOQ</th></tr></thead><tbody>{rows.slice(0,20).map(r=><tr key={r.sku}><td><b>{r.sku}</b></td><td>{r.name}</td><td>{r.category||'—'}</td><td>{r.packaging||'—'}</td>{SEGMENTS.map(s=><td key={s}>{r.prices.find(p=>p.segment===s)?.price??'—'}</td>)}<td>{r.moq}</td></tr>)}</tbody></table></div>{rows.length>20&&<p className="admin-help">Показаны первые 20 строк из {rows.length}. Все строки уйдут в Apply.</p>}</section>{mode==='apply'&&<section className="admin-card apply-card"><h2>3. Apply to Supabase</h2><p>Import Secret используется только для этого запроса и не сохраняется в браузере.</p><input className="secret-input" type="password" placeholder="Import Secret" value={secret} onChange={e=>setSecret(e.target.value)}/><button className="primary" disabled={busy} onClick={apply}>{busy?'Importing…':'Apply catalog update'}</button></section>}</>}{message&&<div className="admin-message">{message}</div>}</main></div>
 }
-
 export default App
