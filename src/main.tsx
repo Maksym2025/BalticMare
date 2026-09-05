@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 import Admin from './admin'
@@ -26,12 +26,13 @@ function Hero() {
     <div className="rb-hero-media" aria-hidden="true" />
     <div className="rb-hero-shade" />
     <div className="rb-hero-inner">
-      <p className="rb-kicker">ПРЯМО ИЗ СЕВЕРНОЙ АТЛАНТИКИ</p>
-      <h1>Морепродукты<br/><i>с историей.</i></h1>
-      <p className="rb-hero-copy">Надёжный источник ответственно выловленных и<br className="desktop"/> выращенных морепродуктов для профессионалов Европы.</p>
-      <div className="rb-actions"><WaterRippleButton onClick={() => window.location.href = '/catalog'}>Смотреть ассортимент</WaterRippleButton><button className="rb-ghost" onClick={() => document.getElementById('about')?.scrollIntoView()}>Как мы работаем ↓</button></div>
+      <p className="rb-kicker">B2B SEAFOOD SUPPLY · BALTIC / NORTH ATLANTIC</p>
+      <h1>Дикая рыба<br/><i>для вашего бизнеса.</i></h1>
+      <p className="rb-hero-copy">Поставка рыбы и морепродуктов для HoReCa, Retail и Wholesale по Германии и ЕС — с прозрачным происхождением, холодовой цепью и B2B-условиями.</p>
+      <div className="rb-actions"><WaterRippleButton onClick={() => window.location.href = '/catalog'}>Смотреть каталог</WaterRippleButton><button className="rb-hero-secondary" onClick={() => document.getElementById('b2b')?.scrollIntoView()}>Стать B2B-клиентом</button></div>
+      <button className="rb-login-link" onClick={() => document.getElementById('b2b')?.scrollIntoView()}>Уже клиент? Войти в B2B-кабинет →</button>
     </div>
-    <div className="rb-coordinates"><span>59° 54' N · 10° 45' E</span><span>COLD-CHAIN VERIFIED / 2026</span><span>SCROLL TO EXPLORE ↓</span></div>
+    <div className="rb-coordinates"><span>BALTIC / NORTH ATLANTIC</span><span>COLD-CHAIN / TRACEABILITY</span><span>B2B · DE · FR · EU</span></div>
   </section>
 }
 
@@ -39,29 +40,41 @@ function Home() {
   return <main className="rb-site">
     <header className="rb-nav">
       <a href="/" className="rb-logo"><strong>ROYAL BALTIC</strong><small>SEAFOOD</small></a>
-      <nav><a href="/catalog">Каталог</a><a href="#supply">Поставки</a><a href="#logistics">Логистика</a><a href="#about">О компании</a></nav>
-      <div className="rb-nav-actions"><button className="icon-btn" aria-label="Search">⌕</button><button className="lang">RU⌄</button><button className="account" onClick={() => window.location.href = '/catalog'}>Войти →</button><WaterRippleButton onClick={() => window.location.href = '/catalog'}>Открыть оптовый аккаунт</WaterRippleButton></div>
+      <nav><a href="/catalog">Каталог / Продукция</a><a href="#about">О нас</a><a href="#quality">Логистика и качество</a><a href="#b2b">HoReCa / Опт</a><a href="#contact">Контакты</a></nav>
+      <div className="rb-nav-actions"><button className="lang">RU⌄</button><button className="account" onClick={() => document.getElementById('b2b')?.scrollIntoView()}>Войти</button><WaterRippleButton onClick={() => document.getElementById('b2b')?.scrollIntoView()}>Стать B2B-клиентом</WaterRippleButton></div>
     </header>
 
     <Hero />
 
-    <section id="about" className="rb-intro">
-      <div className="rb-section-no">01 · ЗАКУПКИ БЕЗ СЮРПРИЗОВ</div>
-      <div className="rb-two-col"><div><p className="rb-kicker teal">НОВЫЙ ПОДХОД К ЗАКУПКАМ</p><h2>Создано для<br/><i>вашей работы.</i></h2></div><div className="rb-order-card"><p>Tell us what you need. We'll handle the rest.</p><div className="order-line"><span>Доставка в</span><b>Europe⌄</b></div><div className="order-grid"><span>WEEKLY VOLUME<br/><b>1–5 pallets</b></span><span>YOUR BUSINESS<br/><b>Restaurant group</b></span><button onClick={() => window.location.href = '/catalog'}>↗</button></div></div></div>
+    <section id="about" className="rb-intro rb-facts">
+      <div className="rb-section-no">01 · О ROYAL BALTIC</div>
+      <div className="rb-two-col"><div><p className="rb-kicker teal">ПРОСТО ДЛЯ ЗАКУПЩИКА</p><h2>Поставка,<br/><i>которой можно доверять.</i></h2></div><div className="rb-facts-grid"><Fact number="01" title="Объёмы" text="Поставки под регулярные потребности бизнеса — от коробки до паллетных заказов."/><Fact number="02" title="Контроль" text="Происхождение, температура, калибр и документы сопровождают поставку."/><Fact number="03" title="География" text="Германия, Франция и другие рынки ЕС — с партнёрской холодовой логистикой."/></div></div>
     </section>
 
-    <section id="supply" className="rb-products"><div className="rb-section-no">02 · ДОСТУПНО СЕЙЧАС</div><div className="rb-section-head"><div><p className="rb-kicker teal">ИЗ НАШИХ ВОД</p><h2>К вашему<br/><i>меню.</i></h2></div><div className="rb-side-copy"><p>Наш ассортимент меняется по сезону. Каждая позиция проверяется по размеру, температуре и документации до выхода в продажу.</p><a href="/catalog">Весь каталог ↗</a></div></div><div className="rb-product-grid"><ProductTeaser n="01" title="Wild Baltic Salmon" spec="H&G · 4–6 kg"/><ProductTeaser n="02" title="North Sea Cod Loin" spec="H&G · 4–6 kg"/><ProductTeaser n="03" title="Cold-Water Prawns" spec="H2O · 4–6 kg"/></div></section>
+    <section id="supply" className="rb-products rb-category-section">
+      <div className="rb-section-no">02 · КАТАЛОГ</div>
+      <div className="rb-section-head"><div><p className="rb-kicker teal">ИЗ НАШИХ ВОД</p><h2>Выберите<br/><i>категорию.</i></h2></div><div className="rb-side-copy"><p>Публичный каталог показывает ассортимент без закрытых B2B-цен. После активации B2B-аккаунта вы видите цены своего класса и условия именно для вашей компании.</p><a href="/catalog">Открыть полный каталог ↗</a></div></div>
+      <div className="rb-category-grid"><CategoryCard n="01" title="Дикая рыба" text="Wild-caught species · Baltic / North Atlantic"/><CategoryCard n="02" title="Морепродукты" text="Shellfish · crustaceans · seafood"/><CategoryCard n="03" title="Заморозка / свежая" text="Fresh · frozen · fillet · IQF / seafrozen"/></div>
+    </section>
 
-    <section id="quality" className="rb-dark"><div><p className="rb-section-no">03 · ПРОИСХОЖДЕНИЕ ПОДТВЕРЖДЕНО</p><h2>Ничего<br/>скрытого<br/><i>подо льдом.</i></h2><p className="rb-dark-copy">От landing до loading bay — мы сохраняем ясную цепочку поставки. Каждый этап документирован.</p><button className="rb-outline" onClick={() => document.getElementById('logistics')?.scrollIntoView()}>Наши стандарты ↗</button></div><div className="rb-timeline"><div><b>01</b><span><strong>Catch / Farm</strong><small>Origin recorded at source</small></span></div><div><b>02</b><span><strong>Quality control</strong><small>Temperature and grade verified</small></span></div><div><b>03</b><span><strong>Cold-chain</strong><small>Sealed and delivered on schedule</small></span></div></div></section>
+    <section id="quality" className="rb-dark rb-quality">
+      <div><p className="rb-section-no">03 · КАЧЕСТВО И ПРОСЛЕЖИВАЕМОСТЬ</p><h2>Ничего<br/>скрытого<br/><i>подо льдом.</i></h2><p className="rb-dark-copy">Каждая поставка должна быть понятной: от происхождения и обработки до температуры, упаковки и документов. Применимые сертификаты и подтверждающие документы предоставляются по конкретному продукту и поставке.</p><button className="rb-outline" onClick={() => document.getElementById('logistics')?.scrollIntoView()}>Логистика и стандарты ↗</button></div>
+      <div className="rb-quality-panel"><div className="rb-cert-grid"><QualityBadge code="MSC" label="Sustainable sourcing"/><QualityBadge code="IFS" label="Food safety"/><QualityBadge code="HACCP" label="Process control"/></div><div className="rb-timeline"><div><b>01</b><span><strong>Origin</strong><small>Species, catch area and source recorded</small></span></div><div><b>02</b><span><strong>Quality control</strong><small>Temperature, grade, packaging and documents verified</small></span></div><div><b>03</b><span><strong>Cold-chain</strong><small>Controlled handling through delivery</small></span></div></div></div>
+    </section>
 
-    <section id="logistics" className="rb-logistics"><div><p className="rb-section-no">04 · ПОДДЕРЖКА ROYAL BALTIC</p><p className="rb-kicker teal">COLD-CHAIN, WITHOUT COMPROMISE</p><h2>Вовремя —<br/>это <i>наш<br/>стандарт.</i></h2><p>Наша сеть дистрибуции соединяет северные воды с городами, где живёт европейская гастрономия.</p><a href="/catalog">Talk to logistics ↗</a></div><div className="rb-map"><span>Oslo</span><span>Copenhagen</span><span>Hamburg</span><span>Paris</span><div className="route"/></div></section>
+    <section id="logistics" className="rb-logistics"><div><p className="rb-section-no">04 · ГЕОГРАФИЯ И ЛОГИСТИКА</p><p className="rb-kicker teal">COLD-CHAIN, WITHOUT COMPROMISE</p><h2>Вовремя —<br/>это <i>наш<br/>стандарт.</i></h2><p>Цепочка поставки строится от источника через контролируемую холодовую логистику до склада клиента. Для HoReCa, Retail и Wholesale условия доставки рассчитываются под заказ.</p><a href="#b2b">Запросить условия поставки ↗</a></div><div className="rb-map"><span>Source</span><span>Hamburg</span><span>Germany</span><span>France</span><div className="route"/><div className="route route-2"/></div></section>
 
-    <section id="contact" className="rb-cta"><p className="rb-kicker">FOR RESTAURANTS, RETAILERS & FOOD SERVICE</p><h2>Let's make your<br/><i>next catch count.</i></h2><p>Получите доступ к доступности, партнёрским ценам и условиям, которые подходят вашему бизнесу.</p><WaterRippleButton onClick={() => window.location.href = '/catalog'}>Открыть оптовый аккаунт</WaterRippleButton></section>
-    <footer className="rb-footer"><a href="/" className="rb-logo"><strong>ROYAL BALTIC</strong><small>SEAFOOD</small></a><span>© 2026 ROYAL BALTIC SEAFOOD</span><span>TERMS · PRIVACY</span><span>DE · FR · EN · RU</span></footer>
+    <section id="b2b" className="rb-b2b"><div><p className="rb-section-no">05 · B2B-КЛИЕНТАМ</p><p className="rb-kicker teal">YOUR BUSINESS ACCOUNT</p><h2>Ваш бизнес.<br/><i>Ваши цены.</i></h2><p>После регистрации компании и проверки мы присваиваем B2B-класс: HoReCa, Retail, Wholesale или Small Wholesale. В кабинете открываются персональные цены, заказы, счета, оплаты и сроки поставки.</p></div><B2BPanel/></section>
+
+    <section id="contact" className="rb-cta"><p className="rb-kicker">HOReCa · RETAIL · WHOLESALE · DISTRIBUTORS</p><h2>Получите B2B<br/><i>прайс и условия.</i></h2><p>Оставьте заявку на регистрацию B2B-клиента или запросите коммерческое предложение. После активации аккаунта цены будут доступны непосредственно в каталоге.</p><div className="rb-cta-actions"><WaterRippleButton onClick={() => document.getElementById('b2b')?.scrollIntoView()}>Стать B2B-клиентом</WaterRippleButton><button className="rb-ghost" onClick={() => window.location.href = '/catalog'}>Смотреть каталог</button></div></section>
+    <footer className="rb-footer"><a href="/" className="rb-logo"><strong>ROYAL BALTIC</strong><small>SEAFOOD</small></a><div><a href="/catalog">Каталог</a><a href="#about">О компании</a><a href="#quality">Качество</a><a href="#logistics">Логистика</a><a href="#contact">Контакты</a></div><span>© 2026 ROYAL BALTIC SEAFOOD</span><span>TERMS · PRIVACY</span><span>DE · FR · EN · RU</span></footer>
   </main>
 }
 
-function ProductTeaser({ n, title, spec }: { n: string; title: string; spec: string }) { return <article className="rb-product"><div className="rb-fish-image"><span>{n}</span><small>Available now</small><div className="boat">RB</div></div><div className="rb-product-body"><div><h3>{title}</h3><p>{spec}</p></div><button onClick={() => window.location.href = '/catalog'}>Открыть →</button></div><div className="rb-product-foot"><span>♧ Partner pricing</span><a href="/catalog">Подробнее ↗</a></div></article> }
+function Fact({ number, title, text }: { number: string; title: string; text: string }) { return <div className="rb-fact"><b>{number}</b><div><strong>{title}</strong><p>{text}</p></div></div> }
+function CategoryCard({ n, title, text }: { n: string; title: string; text: string }) { return <a href="/catalog" className="rb-category-card"><div className="rb-category-visual"><span>{n}</span><i>RB</i></div><div><small>PRODUCT CATEGORY</small><h3>{title}</h3><p>{text}</p><b>Открыть категорию ↗</b></div></a> }
+function QualityBadge({ code, label }: { code: string; label: string }) { return <div className="rb-quality-badge"><span>✓</span><strong>{code}</strong><small>{label}</small></div> }
+function B2BPanel() { const [open, setOpen] = useState(false); return <div className="rb-b2b-panel"><div className="rb-account-choice"><button onClick={() => setOpen(true)}><span>01</span><strong>Уже есть аккаунт?</strong><small>Войти через Google или Email</small><b>→</b></button><button onClick={() => setOpen(true)}><span>02</span><strong>Новая компания?</strong><small>Зарегистрироваться как B2B-клиент</small><b>→</b></button></div><div className="rb-account-result"><span>B2B CABINET</span><div><strong>Personal pricing</strong><strong>Orders & delivery</strong><strong>Invoices & payments</strong><strong>Support from your account</strong></div></div>{open && <div className="rb-auth-note"><button aria-label="Close" onClick={() => setOpen(false)}>×</button><strong>Вход / регистрация</strong><p>Здесь будет подключена Supabase Auth: Google и Email. Для B2B-клиента после проверки компании откроются персональные цены и кабинет.</p><span>UI подготовлен · Auth подключаем следующим этапом</span></div>}</div> }
 
 const path = window.location.pathname
 createRoot(document.getElementById('root')!).render(<React.StrictMode>{path.startsWith('/admin') ? <Admin/> : path === '/catalog' || path.startsWith('/catalog/') ? <Catalog/> : <Home/>}</React.StrictMode>)
