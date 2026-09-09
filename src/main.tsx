@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
+import './hero-video.css'
 import Admin from './admin'
 import Catalog from './catalog'
 
