@@ -4,6 +4,9 @@ import './styles.css'
 import Admin from './admin'
 import Catalog from './catalog'
 
+const HERO_VIDEO_URL = import.meta.env.VITE_HERO_VIDEO_URL || '/hero/royal-baltic-hero.mp4'
+const HERO_POSTER_URL = import.meta.env.VITE_HERO_POSTER_URL || '/hero/royal-baltic-hero.jpg'
+
 function WaterRippleButton({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -23,7 +26,11 @@ function WaterRippleButton({ children, onClick }: { children: React.ReactNode; o
 
 function Hero() {
   return <section className="rb-hero">
-    <div className="rb-hero-media" aria-hidden="true" />
+    <div className="rb-hero-media" aria-hidden="true">
+      <video className="rb-hero-video" autoPlay muted loop playsInline preload="metadata" poster={HERO_POSTER_URL}>
+        <source src={HERO_VIDEO_URL} type="video/mp4" />
+      </video>
+    </div>
     <div className="rb-hero-shade" />
     <div className="rb-hero-inner">
       <p className="rb-kicker">ПРЯМО ИЗ СЕВЕРНОЙ АТЛАНТИКИ</p>
